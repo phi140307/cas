@@ -1,0 +1,14 @@
+sequenceDiagram
+  participant User
+  participant App as Lebaphi
+  participant Cas
+  participant Bank
+  User->>App: Create deposit
+  App->>App: Insert pending transaction
+  App->>Cas: POST /qr-pay
+  Cas-->>App: QR, referenceNumber, VA metadata
+  App-->>User: Display QR
+  User->>Bank: Pay QR
+  Bank->>Cas: Confirm payment
+  Cas->>App: TRANSACTIONS webhook
+  App->>App: Settle exactly once

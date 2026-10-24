@@ -1,0 +1,16 @@
+{
+  "webhookType": "TRANSACTIONS",
+  "webhookCode": "DEFAULT_UPDATE",
+  "grantId": "redacted-grant-id",
+  "transaction": {
+    "id": "redacted-provider-transaction-id",
+    "transactionCode": "redacted-transaction-code",
+    "amount": 100000,
+    "description": "REDACTED",
+    "accountNumber": "REDACTED_PRIMARY_ACCOUNT",
+    "virtualAccountNumber": "REDACTED_VIRTUAL_ACCOUNT",
+    "paymentMeta": {
+      "referenceNumber": "cas_deposit_example_uuid"
+    }
+  }
+}

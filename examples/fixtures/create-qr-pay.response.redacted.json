@@ -1,0 +1,13 @@
+{
+  "requestId": "redacted-request-id",
+  "qrPay": {
+    "bin": "970xxx",
+    "amount": 100000,
+    "description": "LEBAPHI",
+    "accountNumber": "REDACTED_PRIMARY_ACCOUNT",
+    "accountName": "REDACTED_ACCOUNT_NAME",
+    "qrCode": "REDACTED_QR_PAYLOAD",
+    "referenceNumber": "cas_deposit_example_uuid",
+    "virtualAccountNumber": "REDACTED_VIRTUAL_ACCOUNT"
+  }
+}

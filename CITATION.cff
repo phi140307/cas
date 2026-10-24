@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this case study, please cite it as below."
+title: "CAS: Nghiên cứu tích hợp Open Banking tại Lebaphi"
+type: software
+authors:
+  - family-names: "Lê"
+    given-names: "Bá Phi"
+date-released: 2026-10-24
+license: MIT
+repository-code: "https://github.com/phi140307/cas"
+abstract: "Case study tiếng Việt về Cas QR Pay, tài khoản ảo theo đơn, webhook và đối soát idempotent."

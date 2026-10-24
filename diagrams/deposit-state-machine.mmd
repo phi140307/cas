@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> pending: Create deposit request
+  pending --> completed: Valid webhook + exact amount
+  pending --> failed: QR provider request fails
+  completed --> completed: Replay webhook
+  failed --> [*]

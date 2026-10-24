@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant Server
+  participant Browser
+  participant CasLink as Cas Link
+  Server->>Server: Generate CSRF state
+  Server->>Server: POST /grant/token
+  Server-->>Browser: grantToken, redirectUri, state
+  Browser->>CasLink: Open link
+  CasLink-->>Browser: publicToken + state
+  Browser->>Server: Exchange publicToken
+  Server->>Server: Store grantId and accessToken securely
