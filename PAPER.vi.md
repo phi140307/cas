@@ -1,8 +1,8 @@
-# Tìm hiểu Cas QR Pay qua ví dụ Lebaphi
+# Tìm hiểu Cas QR Pay
 
 ## 1. Cas QR Pay dùng để làm gì?
 
-Lebaphi là website bán dịch vụ số. Người dùng cần nạp tiền để sử dụng dịch vụ, vì vậy website cần biết chính xác ai đã chuyển tiền và số tiền đó thuộc về yêu cầu nạp nào.
+Một website bán dịch vụ số thường cần cho người dùng nạp tiền để sử dụng dịch vụ. Website cần biết chính xác ai đã chuyển tiền và số tiền đó thuộc về yêu cầu nạp nào.
 
 Nếu chỉ dùng một số tài khoản ngân hàng cố định thì khá khó đối soát. Có thể có nhiều người chuyển cùng số tiền, hoặc khách ghi sai nội dung. Cas QR Pay hỗ trợ tạo QR riêng cho từng yêu cầu nạp nên phù hợp với bài toán này.
 
@@ -10,12 +10,12 @@ Nếu chỉ dùng một số tài khoản ngân hàng cố định thì khá kh�
 
 Trước tiên, chủ website liên kết tài khoản ngân hàng với Cas. Sau khi liên kết thành công, server nhận được access token để gọi API tạo QR.
 
-Khi một khách nạp tiền, Lebaphi gửi ba thông tin chính cho Cas:
+Khi một khách nạp tiền, website gửi ba thông tin chính cho Cas:
 
 ```json
 {
   "amount": 100000,
-  "description": "LEBAPHI",
+  "description": "QR_PAY_SAMPLE",
   "referenceNumber": "cas_deposit_<uuid>"
 }
 ```
@@ -25,7 +25,7 @@ Cas trả về mã QR để khách quét. Theo tài liệu QR Pay, response còn
 ```mermaid
 sequenceDiagram
   participant User as Khách hàng
-  participant Web as Lebaphi
+  participant Web as Website
   participant Cas as Cas QR Pay
   User->>Web: Nhập số tiền nạp
   Web->>Cas: Tạo QR Pay
@@ -44,26 +44,27 @@ Trong QR Pay, Cas có thể tạo tài khoản ảo gắn với từng đơn tha
 
 Tuy nhiên cách hiển thị số tài khoản phụ thuộc vào dịch vụ ngân hàng đã liên kết. Vì vậy website cần đọc và hiển thị riêng hai trường `virtualAccountNumber` và `accountNumber`, không tự đoán hai số này luôn khác nhau.
 
-## 4. Cách Lebaphi xử lý nạp tiền
+## 4. Website có thể xử lý nạp tiền như thế nào?
 
 Khi khách bấm tạo QR, server tạo một giao dịch nạp ở trạng thái `pending`. Sau đó server gọi Cas để tạo QR.
 
-Việc cộng tiền chưa xảy ra ở bước này. Lebaphi chỉ cộng số dư khi Cas gửi webhook `TRANSACTIONS` báo giao dịch thành công. Webhook chứa `paymentMeta.referenceNumber`, từ đó hệ thống tìm đúng yêu cầu nạp trước đó.
+Việc cộng tiền chưa xảy ra ở bước này. Website chỉ cộng số dư khi Cas gửi webhook `TRANSACTIONS` báo giao dịch thành công. Webhook chứa `paymentMeta.referenceNumber`, từ đó hệ thống tìm đúng yêu cầu nạp trước đó.
 
-Các file chính trong demo:
+Các thành phần thường có trong một hệ thống:
 
-| File | Công việc |
+| Thành phần | Công việc |
 | --- | --- |
-| `lib/cas-qr-pay.ts` | Gọi API Cas và giữ credential ở server |
-| `app/api/cas/deposit/route.ts` | Tạo yêu cầu nạp và QR |
-| `app/api/webhook/cas/route.ts` | Nhận webhook từ Cas |
-| `complete_cas_deposit` | Cộng số dư trong database |
+| Frontend | Nhận amount và hiển thị QR |
+| API server | Tạo yêu cầu nạp, gọi Cas và giữ credential |
+| Database | Lưu trạng thái deposit và số dư |
+| Webhook endpoint | Nhận event giao dịch từ Cas |
+| Settlement transaction | Kiểm tra và cộng số dư đúng một lần |
 
 ## 5. Vì sao cần chống cộng tiền hai lần?
 
 Webhook có thể được gửi lại nếu server lỗi hoặc phản hồi chậm. Nếu không kiểm tra, cùng một giao dịch có thể cộng tiền nhiều lần.
 
-Lebaphi xử lý bằng cách:
+Website có thể xử lý bằng cách:
 
 1. Tìm giao dịch theo `referenceNumber`.
 2. Khóa giao dịch trong database.
@@ -81,7 +82,7 @@ Lebaphi xử lý bằng cách:
 
 ## 7. Kết luận
 
-Cas QR Pay giúp Lebaphi tạo QR riêng cho từng lần nạp. Cách này dễ đối soát hơn việc chỉ dùng một số tài khoản cố định. Phần quan trọng nhất không phải giao diện QR, mà là `referenceNumber`, webhook và cơ chế chỉ cộng số dư một lần.
+Cas QR Pay giúp website tạo QR riêng cho từng lần nạp. Cách này dễ đối soát hơn việc chỉ dùng một số tài khoản cố định. Phần quan trọng nhất không phải giao diện QR, mà là `referenceNumber`, webhook và cơ chế chỉ cộng số dư một lần.
 
 Code ví dụ đơn giản nằm trong thư mục [examples](examples/). Tài liệu chi tiết hơn nằm trong thư mục [docs](docs/).
 

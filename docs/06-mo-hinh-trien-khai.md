@@ -1,29 +1,29 @@
-# Case study: Lebaphi QR Pay
+# Mô hình triển khai QR Pay
 
 ## Kiến trúc
 
 ```mermaid
 flowchart LR
-  UI[Dashboard Deposit] --> API[POST /api/cas/deposit]
-  API --> DB[(Supabase transactions)]
+  UI[Frontend] --> API[API server]
+  API --> DB[(Database)]
   API --> CAS[POST /qr-pay]
   CAS --> UI
-  CAS --> WH[POST /api/webhook/cas]
-  WH --> RPC[complete_cas_deposit]
+  CAS --> WH[Webhook endpoint]
+  WH --> RPC[Settlement transaction]
   RPC --> DB
-  RPC --> WALLET[users.balance]
+  RPC --> WALLET[User balance]
 ```
 
-## Mapping implementation
+## Thành phần chính
 
-| Trách nhiệm | Thành phần Lebaphi |
+| Trách nhiệm | Thành phần tổng quát |
 | --- | --- |
-| Config, headers, timeout | `lib/cas-qr-pay.ts` |
-| Tạo pending deposit và QR | `app/api/cas/deposit/route.ts` |
-| Hiển thị QR/VA response | `components/CasPaymentDialog.tsx` |
-| Kiểm tra trạng thái giao dịch | `app/api/cas/deposit/verify/route.ts` |
-| Nhận webhook | `app/api/webhook/cas/route.ts` |
-| Settlement SQL | `supabase/migrations/20260923000000_add_cas_qr_pay.sql` |
+| Config, headers, timeout | Module Cas server-side |
+| Tạo pending deposit và QR | Deposit API |
+| Hiển thị QR/VA response | Frontend payment view |
+| Kiểm tra trạng thái giao dịch | Deposit status API |
+| Nhận webhook | Webhook handler |
+| Settlement | Database transaction |
 
 ## Quy trình deposit
 

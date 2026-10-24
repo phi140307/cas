@@ -3,7 +3,7 @@
   "qrPay": {
     "bin": "970xxx",
     "amount": 100000,
-    "description": "LEBAPHI",
+    "description": "QR_PAY_SAMPLE",
     "accountNumber": "REDACTED_PRIMARY_ACCOUNT",
     "accountName": "REDACTED_ACCOUNT_NAME",
     "qrCode": "REDACTED_QR_PAYLOAD",

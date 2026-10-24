@@ -2,7 +2,7 @@
 
 ## Webhook QR Pay
 
-Lebaphi chỉ xử lý event có:
+Website chỉ xử lý event có:
 
 - `webhookType = TRANSACTIONS`.
 - `transaction.paymentMeta.referenceNumber` khớp deposit đang chờ.

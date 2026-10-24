@@ -18,7 +18,7 @@ Request gồm:
 ```json
 {
   "amount": 100000,
-  "description": "LEBAPHI",
+  "description": "QR_PAY_SAMPLE",
   "referenceNumber": "cas_deposit_<uuid>"
 }
 ```

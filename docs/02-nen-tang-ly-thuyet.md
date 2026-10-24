@@ -25,7 +25,7 @@ Giao diện chỉ khởi tạo yêu cầu nạp. Quyết định cộng số dư
 ```mermaid
 sequenceDiagram
   participant U as Người dùng
-  participant A as Lebaphi API
+  participant A as Website API
   participant C as Cas
   participant B as Ngân hàng
   U->>A: Tạo yêu cầu nạp

@@ -18,11 +18,11 @@ Cas QR Pay cung cấp QR động gắn với một đơn thanh toán. Khi tạo 
 Nghiên cứu dùng phương pháp **design case study**:
 
 1. Tổng hợp API và skill chính thức của Cas.
-2. Mô hình hóa luồng QR Pay tại Lebaphi.
+2. Mô hình hóa luồng QR Pay của một website.
 3. Phân tích bất biến dữ liệu của deposit settlement.
 4. Xây dựng fixture redaction và test matrix.
 5. Ghi lại giới hạn, các giả định và điều kiện cần xác minh theo từng dịch vụ tài chính.
 
 ## Phạm vi
 
-Case study triển khai sâu QR Pay. Các sản phẩm Cas khác được tổng hợp ở mức kiến trúc và luồng tích hợp; repository không tuyên bố rằng Lebaphi đã triển khai tất cả các sản phẩm đó.
+Tài liệu triển khai sâu QR Pay. Các sản phẩm Cas khác được tổng hợp ở mức kiến trúc và luồng tích hợp; repository không tuyên bố mọi sản phẩm đã được triển khai trong một website cụ thể.

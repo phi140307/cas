@@ -1,16 +1,16 @@
-# CAS: Nghiên cứu tích hợp Open Banking tại Lebaphi
+# CAS: Tìm hiểu tích hợp Open Banking
 
-> Case study tiếng Việt về thiết kế luồng nhận tiền tự động với Cas QR Pay, tài khoản ảo theo đơn, webhook và đối soát idempotent.
+> Tài liệu tiếng Việt dễ hiểu về Cas QR Pay, tài khoản ảo theo đơn, webhook và đối soát idempotent.
 
 ## Mục tiêu
 
-Repository này là tài liệu học tập và case study kỹ thuật. Phần demo tham chiếu tới ứng dụng Lebaphi; repository **không** chứa credential, token, số tài khoản thật, dữ liệu người dùng hay mã nguồn production nguyên khối.
+Repository này là tài liệu học tập và ví dụ kỹ thuật. Repository **không** chứa credential, token, số tài khoản thật, dữ liệu người dùng hay mã nguồn production nguyên khối.
 
 Nghiên cứu tập trung vào câu hỏi: làm thế nào để một hệ thống thương mại số nhận tiền qua chuyển khoản, định danh đúng đơn nạp và cộng số dư đúng một lần khi webhook bị gửi lại?
 
 ## Bài tìm hiểu ngắn
 
-Đọc bài giải thích Cas QR Pay qua ví dụ Lebaphi: [Tìm hiểu Cas QR Pay qua ví dụ Lebaphi](PAPER.vi.md).
+Đọc bài giải thích cơ bản: [Tìm hiểu Cas QR Pay](PAPER.vi.md).
 
 ## Kết luận ngắn
 
@@ -30,7 +30,7 @@ Nghiên cứu tập trung vào câu hỏi: làm thế nào để một hệ th�
 | [Grant và Cas Link](docs/03-grant-cas-link-access-token.md) | Vòng đời quyền truy cập |
 | [So sánh sản phẩm](docs/04-bang-so-sanh-san-pham.md) | Scope, use case, API và rủi ro cho từng sản phẩm |
 | [QR Pay và VA theo đơn](docs/05-qr-pay-va-theo-don.md) | Phân tích sâu response, QR và `referenceNumber` |
-| [Case study Lebaphi](docs/06-case-study-lebaphi.md) | Kiến trúc demo thực tế |
+| [Mô hình triển khai](docs/06-mo-hinh-trien-khai.md) | Kiến trúc QR Pay tổng quát |
 | [Webhook và settlement](docs/07-webhook-idempotency.md) | Replay, amount mismatch và transaction state machine |
 | [Bảo mật](docs/08-bao-mat-threat-model.md) | Threat model và biện pháp kiểm soát |
 | [Sandbox, Production và release](docs/09-sandbox-production-release.md) | Môi trường, checklist và vận hành |
@@ -46,10 +46,6 @@ Các mẫu dùng TypeScript, native `fetch` và placeholder environment variable
 - [Tạo QR Pay và đọc VA theo đơn](examples/create-qr-pay.ts)
 - [Webhook idempotent](examples/webhook-handler.ts)
 - [Fixture đã redaction](examples/fixtures/)
-
-## Demo
-
-Lebaphi là demo ứng dụng cho QR Pay: người dùng vào trang nạp tiền, tạo QR, sau đó hệ thống chờ webhook để đối soát. Chỉ coi deployment là bằng chứng khi environment, access token, webhook và migration settlement đã được kiểm tra đầy đủ.
 
 Không đưa QR thật, số tài khoản thật, `clientId`, `secretKey`, `accessToken`, `grantToken`, `publicToken` hoặc webhook token vào issue, pull request hay commit.
 
