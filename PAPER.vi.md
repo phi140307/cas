@@ -1,109 +1,96 @@
-# Thiết kế luồng nạp tiền tự động bằng Cas QR Pay: Case study Lebaphi
+# Báo cáo nhỏ: Tìm hiểu Cas QR Pay trong website Lebaphi
 
-**Tác giả:** Lê Bá Phi
-
+**Người thực hiện:** Lê Bá Phi
 **Repository:** https://github.com/phi140307/cas
-**Phiên bản:** 1.0, 2026
 
-## Tóm tắt
+## 1. Lý do tìm hiểu
 
-Bài viết trình bày thiết kế một luồng nạp số dư tự động cho hệ thống dịch vụ số Lebaphi bằng Cas QR Pay. Vấn đề trọng tâm là xác định đúng giao dịch chuyển khoản thuộc về yêu cầu nạp nào, đồng thời bảo đảm một webhook bị gửi lại không thể cộng tiền hai lần. Giải pháp tạo QR động với `referenceNumber` duy nhất cho mỗi yêu cầu nạp, lưu giao dịch ở trạng thái chờ, rồi chỉ cập nhật số dư sau khi nhận webhook giao dịch hợp lệ. Case study sử dụng Next.js ở tầng API và PostgreSQL/Supabase ở tầng settlement. Kết quả thiết kế cho thấy `referenceNumber`, kiểm tra số tiền và khóa hàng database là ba thành phần cốt lõi để đối soát đáng tin cậy.
+Lebaphi là website bán dịch vụ số. Người dùng cần nạp tiền để sử dụng dịch vụ, vì vậy website cần biết chính xác ai đã chuyển tiền và số tiền đó thuộc về yêu cầu nạp nào.
 
-**Từ khóa:** Open Banking, Cas, QR Pay, tài khoản ảo, webhook, idempotency, đối soát giao dịch.
+Nếu chỉ dùng một số tài khoản ngân hàng cố định thì khá khó đối soát. Có thể có nhiều người chuyển cùng số tiền, hoặc khách ghi sai nội dung. Cas QR Pay hỗ trợ tạo QR riêng cho từng yêu cầu nạp nên phù hợp với bài toán này.
 
-## 1. Đặt vấn đề
+## 2. Cas QR Pay hoạt động như thế nào?
 
-Nạp tiền bằng chuyển khoản ngân hàng thường gặp ba rủi ro. Thứ nhất, nhiều khách có thể chuyển cùng số tiền. Thứ hai, nội dung chuyển khoản có thể bị nhập thiếu hoặc sai. Thứ ba, nhà cung cấp có thể gửi lại webhook khi endpoint phản hồi chậm hoặc gặp lỗi.
+Trước tiên, chủ website liên kết tài khoản ngân hàng với Cas. Sau khi liên kết thành công, server nhận được access token để gọi API tạo QR.
 
-Nếu hệ thống cộng số dư chỉ dựa vào số tiền, tên người gửi hoặc trạng thái ở giao diện thì có thể ghi nhận sai người hoặc cộng tiền hai lần. Vì vậy cần một khóa định danh cho từng yêu cầu nạp và một cơ chế settlement nguyên tử ở server.
+Khi một khách nạp tiền, Lebaphi gửi ba thông tin chính cho Cas:
 
-## 2. Cơ sở kỹ thuật
+```json
+{
+  "amount": 100000,
+  "description": "LEBAPHI",
+  "referenceNumber": "cas_deposit_<uuid>"
+}
+```
 
-Cas sử dụng mô hình cấp quyền gồm grant token, Cas Link, public token và access token [1]. Ứng dụng tạo grant với scope phù hợp; người dùng hoàn tất xác thực tại Cas Link; server đổi `publicToken` lấy `accessToken`; sau đó gọi API sản phẩm.
-
-Với QR Pay, request tạo thanh toán bao gồm `amount`, `description` và `referenceNumber` [2]. Response mô tả `qrCode`, `accountNumber`, `virtualAccountNumber` và `referenceNumber`. QR Pay khác Virtual Account cố định: QR Pay phục vụ một lệnh thanh toán cụ thể, còn Virtual Account là số định danh có vòng đời dài hơn.
-
-## 3. Phương pháp nghiên cứu
-
-Bài viết dùng phương pháp case study kỹ thuật:
-
-1. Đọc `cas-sdk` và toàn bộ product skill trong danh mục Cas.
-2. Đối chiếu schema API grant, exchange, QR Pay và webhook chính thức.
-3. Mô hình hóa luồng nạp tiền của Lebaphi.
-4. Xác định bất biến dữ liệu cho settlement.
-5. Xây dựng test matrix cho lỗi API, sai số tiền và replay webhook.
-
-Mục tiêu là mô tả thiết kế tái lập được, không công bố credential, dữ liệu tài chính hoặc QR thực tế.
-
-## 4. Thiết kế hệ thống
-
-Luồng Lebaphi gồm sáu bước:
-
-1. Người dùng chọn số tiền nạp trên dashboard.
-2. Server tạo `referenceNumber` ngẫu nhiên và insert giao dịch `pending`.
-3. Server gọi `POST /qr-pay` của Cas.
-4. Client hiển thị `qrCode`; client không được tự cộng tiền.
-5. Cas gửi webhook `TRANSACTIONS` sau khi giao dịch được xác nhận.
-6. Server kiểm tra webhook và gọi hàm settlement để cập nhật số dư đúng một lần.
+Cas trả về mã QR để khách quét. Theo tài liệu QR Pay, response còn có `accountNumber`, `virtualAccountNumber` và `referenceNumber`. `referenceNumber` là mã riêng của từng yêu cầu nạp và là phần quan trọng nhất trong hệ thống.
 
 ```mermaid
 sequenceDiagram
-  participant U as Người dùng
-  participant A as Lebaphi API
-  participant D as Database
-  participant C as Cas QR Pay
-  U->>A: Yêu cầu nạp tiền
-  A->>D: Insert pending + referenceNumber
-  A->>C: POST /qr-pay
-  C-->>A: qrCode + metadata
-  A-->>U: Hiển thị QR
-  C->>A: Webhook TRANSACTIONS
-  A->>D: Validate và settle atomically
+  participant User as Khách hàng
+  participant Web as Lebaphi
+  participant Cas as Cas QR Pay
+  User->>Web: Nhập số tiền nạp
+  Web->>Cas: Tạo QR Pay
+  Cas-->>Web: QR + referenceNumber
+  Web-->>User: Hiển thị QR
+  Cas->>Web: Gửi webhook khi thanh toán xong
+  Web->>Web: Kiểm tra và cộng số dư
 ```
 
-`referenceNumber` liên kết ba đối tượng: giao dịch chờ của Lebaphi, request QR Pay và `paymentMeta.referenceNumber` từ webhook. Không dùng username hoặc amount làm khóa này vì chúng có thể trùng.
+## 3. Tài khoản ảo theo từng đơn
 
-## 5. Bảo đảm đúng đắn của settlement
+Trong QR Pay, Cas có thể tạo tài khoản ảo gắn với từng đơn thanh toán. Điều này khác với Virtual Account cố định.
 
-Settlement có ba bất biến:
+- QR Pay dùng cho một lần thanh toán cụ thể, scope là `qrpay`.
+- Virtual Account cố định dùng để quản lý khoản phải thu lâu dài, scope là `virtual_account`.
 
-```text
-Một referenceNumber chỉ hoàn tất một lần.
-Một provider transaction ID không được cộng tiền hai lần.
-Số tiền webhook phải bằng số tiền dự kiến của yêu cầu nạp.
-```
+Tuy nhiên cách hiển thị số tài khoản phụ thuộc vào dịch vụ ngân hàng đã liên kết. Vì vậy website cần đọc và hiển thị riêng hai trường `virtualAccountNumber` và `accountNumber`, không tự đoán hai số này luôn khác nhau.
 
-Trong case study, transaction được lấy với khóa hàng (`FOR UPDATE`). Nếu transaction đã ở trạng thái `completed`, hàm trả `already_completed`. Nếu amount không khớp, hàm trả `amount_mismatch`. Chỉ sau khi kiểm tra thành công, hệ thống mới cập nhật `users.balance`, `total_deposited`, trạng thái transaction và provider transaction ID trong cùng một transaction database.
+## 4. Cách Lebaphi xử lý nạp tiền
 
-Đây là cơ chế idempotency ở tầng dữ liệu. Nó an toàn hơn việc chỉ dùng biến nhớ trên web server vì webhook có thể được xử lý bởi nhiều instance khác nhau.
+Khi khách bấm tạo QR, server tạo một giao dịch nạp ở trạng thái `pending`. Sau đó server gọi Cas để tạo QR.
 
-## 6. Bảo mật và môi trường
+Việc cộng tiền chưa xảy ra ở bước này. Lebaphi chỉ cộng số dư khi Cas gửi webhook `TRANSACTIONS` báo giao dịch thành công. Webhook chứa `paymentMeta.referenceNumber`, từ đó hệ thống tìm đúng yêu cầu nạp trước đó.
 
-`clientId`, `secretKey`, `accessToken` và webhook token phải tồn tại ở server-side environment variables. Cas yêu cầu các header `x-client-id`, `x-secret-key`, `X-BankHub-Api-Version` và token phân quyền thô trong `Authorization` [1].
+Các file chính trong demo:
 
-Callback Cas Link cần `state` ngẫu nhiên để chống CSRF. Webhook cần một cơ chế xác thực riêng, xử lý nhanh và idempotent. Sandbox và Production phải tách base URL, credential, access token, webhook và quy trình vận hành [1]. Credential Sandbox không thể gọi endpoint Production.
+| File | Công việc |
+| --- | --- |
+| `lib/cas-qr-pay.ts` | Gọi API Cas và giữ credential ở server |
+| `app/api/cas/deposit/route.ts` | Tạo yêu cầu nạp và QR |
+| `app/api/webhook/cas/route.ts` | Nhận webhook từ Cas |
+| `complete_cas_deposit` | Cộng số dư trong database |
 
-## 7. Đánh giá và giới hạn
+## 5. Vì sao cần chống cộng tiền hai lần?
 
-Thiết kế được đánh giá bằng các kịch bản: tạo QR thành công, thiếu secret, API QR lỗi, webhook amount đúng, webhook amount sai và replay webhook. Mỗi kịch bản có thể tái hiện bằng fixture redaction trong repository.
+Webhook có thể được gửi lại nếu server lỗi hoặc phản hồi chậm. Nếu không kiểm tra, cùng một giao dịch có thể cộng tiền nhiều lần.
 
-Một giới hạn quan trọng là đặc điểm `virtualAccountNumber` phụ thuộc vào dịch vụ tài chính được liên kết. Ứng dụng cần hiển thị tách bạch `virtualAccountNumber` và `accountNumber` từ response Cas, thay vì giả định chúng luôn khác nhau. Production chỉ được công bố là hoàn tất khi có bằng chứng webhook, settlement migration và checklist launch tương ứng.
+Lebaphi xử lý bằng cách:
 
-## 8. Kết luận
+1. Tìm giao dịch theo `referenceNumber`.
+2. Khóa giao dịch trong database.
+3. Kiểm tra số tiền webhook có đúng số tiền khách chọn hay không.
+4. Nếu giao dịch đã `completed` thì không cộng lại.
+5. Lưu mã giao dịch của Cas sau khi cộng tiền thành công.
 
-Cas QR Pay giúp hệ thống gắn mỗi yêu cầu nạp với một payment reference rõ ràng. Tuy nhiên QR tạo thành công không phải là bằng chứng đã thanh toán. Độ tin cậy của hệ thống đến từ webhook được xác thực, so sánh chính xác số tiền, database transaction và idempotency khi retry.
+## 6. Lưu ý bảo mật
 
-Lebaphi minh họa một cách tiếp cận có thể mở rộng: UI chỉ khởi tạo yêu cầu; server quản lý QR và secrets; database quyết định settlement; webhook là nguồn sự thật cho thay đổi số dư.
+- Không đưa `CAS_SECRET_KEY`, access token hoặc webhook token lên client.
+- Không commit file `.env` lên GitHub.
+- Sandbox và Production dùng key, token và URL khác nhau.
+- Không dùng QR Sandbox để nhận tiền thật.
+- Webhook phải được kiểm tra trước khi cập nhật số dư.
 
-## Tài liệu tham khảo
+## 7. Kết luận
 
-[1] Cas, "Cas SDK - Core", https://cas.so/skills/cas-sdk/SKILL.md
+Cas QR Pay giúp Lebaphi tạo QR riêng cho từng lần nạp. Cách này dễ đối soát hơn việc chỉ dùng một số tài khoản cố định. Phần quan trọng nhất không phải giao diện QR, mà là `referenceNumber`, webhook và cơ chế chỉ cộng số dư một lần.
 
-[2] Cas, "Tạo mã thanh toán QR Pay", https://cas.so/general/api/product-qr-pay/create-qr-pay.md
+Code ví dụ đơn giản nằm trong thư mục [examples](examples/). Tài liệu chi tiết hơn nằm trong thư mục [docs](docs/).
 
-[3] Cas, "Webhook", https://cas.so/general/api/webhook.md
+## Nguồn tham khảo
 
-[4] Cas, "Cas Link", https://cas.so/general/link.md
-[5] Cas, "Launch checklist", https://cas.so/launch-checklist.md
-
-Tài liệu mở rộng, code mẫu và sơ đồ: [README](README.md).
+- [Cas Skills](https://cas.so/skills)
+- [Tạo QR Pay](https://cas.so/general/api/product-qr-pay/create-qr-pay.md)
+- [Webhook Cas](https://cas.so/general/api/webhook.md)
+- [Cas Link](https://cas.so/general/link.md)
