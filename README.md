@@ -8,9 +8,9 @@ Repository này là tài liệu học tập và case study kỹ thuật. Phần 
 
 Nghiên cứu tập trung vào câu hỏi: làm thế nào để một hệ thống thương mại số nhận tiền qua chuyển khoản, định danh đúng đơn nạp và cộng số dư đúng một lần khi webhook bị gửi lại?
 
-## Bài viết dạng paper
+## Bài tìm hiểu ngắn
 
-Đọc bản paper ngắn, liền mạch theo format học thuật: [Thiết kế luồng nạp tiền tự động bằng Cas QR Pay: Case study Lebaphi](PAPER.vi.md).
+Đọc bài giải thích Cas QR Pay qua ví dụ Lebaphi: [Tìm hiểu Cas QR Pay qua ví dụ Lebaphi](PAPER.vi.md).
 
 ## Kết luận ngắn
 

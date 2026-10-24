@@ -1,9 +1,6 @@
-# Báo cáo nhỏ: Tìm hiểu Cas QR Pay trong website Lebaphi
+# Tìm hiểu Cas QR Pay qua ví dụ Lebaphi
 
-**Người thực hiện:** Lê Bá Phi
-**Repository:** https://github.com/phi140307/cas
-
-## 1. Lý do tìm hiểu
+## 1. Cas QR Pay dùng để làm gì?
 
 Lebaphi là website bán dịch vụ số. Người dùng cần nạp tiền để sử dụng dịch vụ, vì vậy website cần biết chính xác ai đã chuyển tiền và số tiền đó thuộc về yêu cầu nạp nào.
 
